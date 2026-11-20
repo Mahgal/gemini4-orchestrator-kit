@@ -40,6 +40,26 @@ class TestValidate(unittest.TestCase):
             result = run("validate", "--tasks-dir", tmp)
             self.assertEqual(result.returncode, 1)
 
+    def test_invalid_json_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            (d / "broken.json").write_text("{not json", encoding="utf-8")
+            result = run("validate", "--tasks-dir", str(d))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("FAIL", result.stdout)
+            self.assertIn("invalid JSON", result.stdout)
+
+    def test_optional_field_must_be_list(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            (d / "bad.json").write_text(json.dumps(
+                {"name": "ok-name", "model": "gemini-4-hydrogen",
+                 "role": "R", "goal": "G", "steps": ["do it"],
+                 "inputs": "not-a-list"}), encoding="utf-8")
+            result = run("validate", "--tasks-dir", str(d))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("inputs must be a list", result.stdout)
+
 
 class TestRender(unittest.TestCase):
     def test_render_contains_goal_and_steps(self):
@@ -52,6 +72,16 @@ class TestRender(unittest.TestCase):
     def test_render_unknown_fails(self):
         result = run("render", "no-such-task")
         self.assertEqual(result.returncode, 1)
+
+    def test_render_invalid_task_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            (d / "bad.json").write_text(json.dumps(
+                {"name": "bad-task", "model": "gemini-4-hydrogen",
+                 "role": "R", "steps": ["do it"]}), encoding="utf-8")
+            result = run("render", "bad-task", "--tasks-dir", str(d))
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("invalid", result.stderr.lower())
 
     def test_list_shows_three_tasks(self):
         result = run("list")

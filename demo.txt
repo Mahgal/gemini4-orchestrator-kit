@@ -1,0 +1,21 @@
+$ python3 orchestrator_kit.py validate
+OK   build-feature (build-feature.json)
+OK   code-review (code-review.json)
+OK   research-brief (research-brief.json)
+3/3 tasks valid
+# exit 0
+
+$ python3 orchestrator_kit.py validate --tasks-dir /tmp/broken-task
+FAIL Sloppy Draft! (sloppy-draft.json):
+  - missing or empty required field: goal
+  - missing or empty required field: steps
+  - name 'Sloppy Draft!' is not a lowercase slug
+  - steps must be a non-empty list
+0/1 tasks valid
+# exit 1
+
+$ python3 orchestrator_kit.py list
+build-feature                gemini-4-hydrogen    Implementation agent
+code-review                  gemini-4-hydrogen    Review agent
+research-brief               gemini-4-hydrogen    Research agent
+# exit 0
